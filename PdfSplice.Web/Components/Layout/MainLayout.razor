@@ -1,18 +1,15 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
+@* 单页工具壳：无侧栏导航，顶条站名 + 限宽内容区。
+   .pdfsplice-shell/.pdfsplice-topbar 样式追加在 wwwroot/app.css 尾部。 *@
+<div class="pdfsplice-shell">
+    <header class="pdfsplice-topbar">
+        <span class="pdfsplice-brand">PdfSplice</span>
+        <span class="pdfsplice-tagline">合并 / 拆分 / N 合一拼版</span>
+        <a class="pdfsplice-gh" href="https://github.com/fortunelover/PdfSplice" target="_blank" rel="noopener">GitHub ↗</a>
+    </header>
+    <main class="pdfsplice-main">
+        @Body
     </main>
 </div>
 

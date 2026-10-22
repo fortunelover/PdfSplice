@@ -1,0 +1,111 @@
+@page "/"
+
+@* PDF 工具主页：从财务工具箱的 PDF 标签整段搬迁。
+   全部交互由 wwwroot/js/pdf.js 驱动（拖拽上传/DataTransfer 文件管理/POST 下载），
+   页面本身无 Blazor 状态，纯静态元素；元素 ID 与 JS 完全对齐（toolbox-pdf-*）。 *@
+        <section class="toolbox-panel single toolbox-panel-pdf">
+            <article class="toolbox-card toolbox-card-pdf">
+                <div class="toolbox-card-head toolbox-pdf-head">
+                    <div class="toolbox-pdf-titles">
+                        <h2>PDF 合并 / 拆分 / 拼版</h2>
+                        <small>多文件按列表顺序合并；逐页拆分打包 zip；N 合一竖向拼版（边距单位：磅 pt）</small>
+                    </div>
+                </div>
+
+                <div class="toolbox-pdf-grid">
+                    @* ===== 左栏：拖拽上传 + 文件列表 + 合并/拆分 ===== *@
+                    <div class="toolbox-pdf-col toolbox-pdf-col-main">
+                        @* 拖拽上传区：label 包裹隐藏的 file input，点击即触发原生选择；
+                            拖拽事件由 toolbox.js 的 bindPdf 绑定（is-dragover 高亮）。
+                            for 指向隐藏 input，整块 label 都可点。 *@
+                        <label class="toolbox-pdf-dropzone" id="toolbox-pdf-dropzone" for="toolbox-pdf-files">
+                            <input type="file" id="toolbox-pdf-files" accept=".pdf,application/pdf" multiple hidden />
+                            <div class="toolbox-pdf-dropzone-inner">
+                                <svg class="toolbox-pdf-dropzone-ico" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+                                    <path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z M7 13h10v2H7z M7 17h7v2H7z"/>
+                                </svg>
+                                <div class="toolbox-pdf-dropzone-text">
+                                    <strong>点击选择 PDF</strong>
+                                    <span>或将文件拖拽到此处（可多选，按列表顺序合并）</span>
+                                </div>
+                                <span class="toolbox-pdf-count" id="toolbox-pdf-count">未选择文件</span>
+                            </div>
+                        </label>
+
+                        @* 文件列表：由 toolbox.js renderPdfList() 渲染（序号 / 文件名 / 大小 / 移除）。
+                            空态由 JS 渲染 <li class="toolbox-pdf-empty">，首屏先放一个占位避免空 ul。 *@
+                        <div class="toolbox-pdf-list-wrap">
+                            <div class="toolbox-pdf-list-head">
+                                <span>文件列表</span>
+                                <button type="button" class="toolbox-mini-btn" id="toolbox-pdf-clear" disabled>清空</button>
+                            </div>
+                            <ul class="toolbox-pdf-list" id="toolbox-pdf-list">
+                                <li class="toolbox-pdf-empty">尚未选择 PDF 文件</li>
+                            </ul>
+                        </div>
+
+                        @* 合并 / 拆分：不涉及边距参数，作为快捷操作独立一组；主按钮在左 *@
+                        <div class="toolbox-pdf-actions">
+                            <button type="button" class="toolbox-primary toolbox-pdf-btn" id="toolbox-pdf-combine">
+                                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 17h2v3h14v-3h2v5H1v-5zM12 2l6 6h-4v9h-4V8H6l6-6z"/></svg>
+                                合并下载
+                            </button>
+                            <button type="button" class="toolbox-pdf-btn" id="toolbox-pdf-split">
+                                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 21h8v-2H5V5h6V3H3v18zm13.59-7l-2.3 2.29L15.7 17.7 19.41 14l-3.71-3.71-1.41 1.42 2.3 2.29H10v2h6.59z"/></svg>
+                                拆分 (zip) 下载
+                            </button>
+                        </div>
+                    </div>
+
+                    @* ===== 右栏：拼版参数（罗盘式边距 + 每页行数） ===== *@
+                    <div class="toolbox-pdf-col toolbox-pdf-col-side">
+                        <div class="toolbox-pdf-splice">
+                            <div class="toolbox-pdf-splice-head">
+                                <h3>拼版 N 合一</h3>
+                                <small>竖向拼接 · 边距单位 磅(pt)</small>
+                            </div>
+
+                            @* 罗盘式边距：3 行 3 列网格，上 / 左·画布·右 / 下，方向感一目了然。
+                                五个 input 的 id 与后端入参字段完全一致（top/bottom/left/right），JS 直接 .value 取。 *@
+                            <div class="toolbox-pdf-margins">
+                                <label class="toolbox-pdf-margin toolbox-pdf-margin-top">
+                                    <span>上 top</span>
+                                    <input type="number" id="toolbox-pdf-top" value="0" min="0" />
+                                </label>
+                                <label class="toolbox-pdf-margin toolbox-pdf-margin-left">
+                                    <span>左 left</span>
+                                    <input type="number" id="toolbox-pdf-left" value="0" min="0" />
+                                </label>
+                                <div class="toolbox-pdf-margin-canvas" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="26" height="26"><path fill="currentColor" d="M3 3h18v18H3V3zm2 2v14h14V5H5z" opacity=".35"/><path fill="currentColor" d="M6 6h12v12H6z"/></svg>
+                                </div>
+                                <label class="toolbox-pdf-margin toolbox-pdf-margin-right">
+                                    <span>右 right</span>
+                                    <input type="number" id="toolbox-pdf-right" value="0" min="0" />
+                                </label>
+                                <label class="toolbox-pdf-margin toolbox-pdf-margin-bottom">
+                                    <span>下 bottom</span>
+                                    <input type="number" id="toolbox-pdf-bottom" value="0" min="0" />
+                                </label>
+                            </div>
+
+                            <label class="toolbox-pdf-maxrow">
+                                <span>每页行数 maxRow</span>
+                                <input type="number" id="toolbox-pdf-maxrow" value="2" min="1" max="20" />
+                            </label>
+
+                            <button type="button" class="toolbox-primary toolbox-pdf-splice-btn" id="toolbox-pdf-splice">
+                                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+                                拼版下载
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @* 底部状态栏：复用 Excel 同款 statusbar 样式（绿点 + 文案），比原来的小号 toolbox-status 更醒目 *@
+                <div class="toolbox-statusbar toolbox-pdf-statusbar" title="就绪">
+                    <span class="toolbox-status-dot"></span>
+                    <span class="toolbox-status-text" id="toolbox-pdf-status">就绪</span>
+                </div>
+            </article>
+        </section>
