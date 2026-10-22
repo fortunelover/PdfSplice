@@ -12,6 +12,8 @@ Merge / split / N-up splice your PDFs — cross-platform .NET library plus a sel
 - **跨平台**：基于 PdfSharpCore，Linux / macOS / Windows 全平台可用
 - **零依赖起步**：工具站无数据库、无认证、无配置文件，`dotnet run` 即用
 
+![screenshot](docs/screenshot.png)
+
 ## 🚀 三步即用 / Quick Start
 
 ```bash
