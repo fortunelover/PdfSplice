@@ -109,3 +109,12 @@
                 </div>
             </article>
         </section>
+
+@inject IJSRuntime JS
+
+@code {
+    // 每次渲染后让 pdf.js 重绑事件（幂等）：circuit 接管会替换预渲染 DOM，
+    // 只靠 DOMContentLoaded 绑定会全部丢失（详见 js/pdf.js 头部注释）。
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+        => await JS.InvokeVoidAsync("PdfSplicePdf.init");
+}

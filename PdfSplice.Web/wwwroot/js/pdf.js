@@ -220,7 +220,12 @@
     }
 
     // ---------- 初始化（幂等） ----------
+    // Blazor Server 预渲染的静态 DOM 会在 circuit 建立后被整体替换，
+    // DOMContentLoaded 时绑的事件全部丢失，所以必须由组件 OnAfterRenderAsync
+    // 每次渲染后重调 init（内部有 dataset 守卫，不会重复绑定）。
     function init() { bindPdf(); }
+
+    window.PdfSplicePdf = { init: init };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
